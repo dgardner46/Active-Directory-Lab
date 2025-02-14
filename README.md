@@ -1,58 +1,24 @@
-<h1>JWipe - Disk Sanitization</h1>
+# PowerShell script to set up an Active Directory lab environment
 
- ### [YouTube Demonstration](https://youtu.be/7eJexJVCqJo)
+# Install required Windows features
+Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
 
-<h2>Description</h2>
-Project consists of a simple PowerShell script that walks the user through "zeroing out" (wiping) any drives that are connected to the system. The utility allows you to select the target disk and choose the number of passes that are performed. The PowerShell script will configure a diskpart script file based on the user's selections and then launch Diskpart to perform the disk sanitization.
-<br />
+# Promote the server to a domain controller
+$domainName = "LabDomain.local"
+$netbiosName = "LabDomain"
+Install-ADDSForest -DomainName $domainName -DomainNetbiosName $netbiosName -Force -Confirm:$false
 
+# Create Organizational Units
+New-ADOrganizationalUnit -Name "Users" -Path "DC=LabDomain,DC=local"
+New-ADOrganizationalUnit -Name "Computers" -Path "DC=LabDomain,DC=local"
 
-<h2>Languages and Utilities Used</h2>
+# Create User Accounts
+New-ADUser -Name "John Doe" -GivenName "John" -Surname "Doe" -SamAccountName "jdoe" -UserPrincipalName "jdoe@LabDomain.local" -Path "OU=Users,DC=LabDomain,DC=local" -AccountPassword (ConvertTo-SecureString "Password123!" -AsPlainText -Force) -Enabled $true
 
-- <b>PowerShell</b> 
-- <b>Diskpart</b>
+# Create a Security Group
+New-ADGroup -Name "LabAdmins" -GroupScope Global -Path "OU=Users,DC=LabDomain,DC=local"
 
-<h2>Environments Used </h2>
+# Add User to Group
+Add-ADGroupMember -Identity "LabAdmins" -Members "jdoe"
 
-- <b>Windows 10</b> (21H2)
-
-<h2>Program walk-through:</h2>
-
-<p align="center">
-Launch the utility: <br/>
-<img src="https://i.imgur.com/62TgaWL.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-<br />
-<br />
-Select the disk:  <br/>
-<img src="https://i.imgur.com/tcTyMUE.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-<br />
-<br />
-Enter the number of passes: <br/>
-<img src="https://i.imgur.com/nCIbXbg.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-<br />
-<br />
-Confirm your selection:  <br/>
-<img src="https://i.imgur.com/cdFHBiU.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-<br />
-<br />
-Wait for process to complete (may take some time):  <br/>
-<img src="https://i.imgur.com/JL945Ga.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-<br />
-<br />
-Sanitization complete:  <br/>
-<img src="https://i.imgur.com/K71yaM2.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-<br />
-<br />
-Observe the wiped disk:  <br/>
-<img src="https://i.imgur.com/AeZkvFQ.png" height="80%" width="80%" alt="Disk Sanitization Steps"/>
-</p>
-
-<!--
- ```diff
-- text in red
-+ text in green
-! text in orange
-# text in gray
-@@ text in purple (and bold)@@
-```
---!>
+Write-Host "Active Directory Lab setup completed successfully."
